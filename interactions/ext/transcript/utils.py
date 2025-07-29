@@ -5,7 +5,7 @@ import re
 
 import pytz
 
-from interactions import GuildText, Guild, LibraryException, Member, User
+from interactions import GuildText, Guild, Member, User
 
 from .emoji_convert import convert_emoji
 
