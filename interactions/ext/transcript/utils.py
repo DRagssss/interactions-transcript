@@ -115,12 +115,12 @@ async def unescape_mention(content):
     )
 
 
-async def channel_mention(content, c):
+async def channel_mention(content, c: GuildText):
     for regex in [Regex.REGEX_CHANNELS, Regex.REGEX_CHANNELS_2]:
         match = re.search(regex, content)
         while match is not None:
             channel_id = int(match[1])
-            channel = GuildText(**await c._client.get_channel(channel_id))
+            channel = c._client.get_channel(channel_id)
 
             content = content.replace(
                 content[match.start() : match.end()],
@@ -136,7 +136,7 @@ async def channel_mention(content, c):
     return content
 
 
-async def member_mention(content, c):
+async def member_mention(content, c: GuildText):
     for regex in [Regex.REGEX_MEMBERS, Regex.REGEX_MEMBERS_2]:
         match = re.search(regex, content)
         while match is not None:
@@ -144,8 +144,8 @@ async def member_mention(content, c):
             member = False
             try:
                 member_name = (
-                    Member(**await c._client.get_member(c.guild.id, member_id)).name
-                    or User(**await c._client.get_user(member_id)).username
+                    c.guild.get_member(member_id).name
+                    or c._client.get_user(member_id).username
                 )
                 member = True
             except AttributeError:
@@ -166,15 +166,13 @@ async def member_mention(content, c):
     return content
 
 
-async def role_mention(content, c):
+async def role_mention(content, c: GuildText):
     for regex in [Regex.REGEX_ROLES, Regex.REGEX_ROLES_2]:
         match = re.search(regex, content)
         while match is not None:
             role_id = int(match[1])
 
-            role = await Guild(**await c._client.get_guild(c.guild.id)).get_role(
-                role_id
-            )
+            role = c._client.get_guild(c.guild.id).get_role(role_id)
 
             if role is None:
                 r = "@deleted-role"

@@ -37,16 +37,20 @@ import aiohttp
 from .cache import cache
 
 
-cdn_fmt = "https://twemoji.maxcdn.com/v/latest/72x72/{codepoint}.png"
+cdn_fmt = "https://cdn.jsdelivr.net/npm/twemoji@latest/assets/72x72/{codepoint}.png"
 
 
 @cache()
 async def valid_src(src):
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(src) as resp:
+            async with session.get(
+                src, timeout=aiohttp.ClientTimeout(connect=0.5)
+            ) as resp:
                 return resp.status == 200
     except aiohttp.ClientConnectorError:
+        return False
+    except TimeoutError:
         return False
 
 
@@ -72,10 +76,7 @@ async def convert(char):
             return char
         shortcode = emoji.demojize(char)
         name = (
-            shortcode.replace(":", "")
-            .replace("_", " ")
-            .replace("selector", "")
-            .title()
+            shortcode.replace(":", "").replace("_", " ").replace("selector", "").title()
         )
 
     src = cdn_fmt.format(

@@ -80,7 +80,7 @@ async def get_transcript(
 
     msg.reverse()
 
-    guild = Guild(**await channel._client.get_guild(channel.guild.id))
+    guild = channel.guild
 
     if mode == "plain":
         content = "==============================================================\nGuild: {}\nChannel: {}\n==============================================================\n".format(
@@ -262,7 +262,7 @@ async def get_transcript(
         for i in msg:
             i: Message
             current = i
-            create = i.id.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
+            create = i.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
                 time_format
             )
             edit = (
@@ -296,7 +296,7 @@ async def get_transcript(
                 )
                 rawhtml = rawhtml.replace("{{MESSAGE_ID}}", str(i.id))
                 rawhtml = rawhtml.replace(
-                    "{{REF_MESSAGE_ID}}", str(i.referenced_message.id)
+                    "{{REF_MESSAGE_ID}}", str(i.get_referenced_message().id)
                 )
                 data += rawhtml
 
@@ -346,13 +346,13 @@ async def get_transcript(
                         ),
                     )
                     msg_content = rawhtml
-                if not i.referenced_message:
+                if not i.get_referenced_message():
                     referenced_message = ""
                 else:
                     if not (
-                        ref := await channel._client.get_message(
+                        ref := channel._client.get_message(
                             channel.id,
-                            int(i.referenced_message._json["id"]),
+                            int(i.get_referenced_message()._json["id"]),
                         )
                     ):
                         with open(
@@ -893,15 +893,15 @@ async def get_transcript(
                     metadata[str(user_id)][4] += 1
                 else:
                     username = i.author.username + "#" + i.author.discriminator
-                    created_at = i.author.id.timestamp
+                    created_at = i.author.created_at
                     bot = i.author.bot
                     avatar = i.author.avatar_url
                     joined_at = (
-                        i.member.joined_at if i.member and i.member.joined_at else None
+                        i.author.joined_at if i.author and i.author.joined_at else None
                     )
                     display_name = (
-                        f'<div class="meta__display-name">{i.member.name}</div>'
-                        if i.member and i.member.name != i.author.username
+                        f'<div class="meta__display-name">{i.author.display_name}</div>'
+                        if i.author and i.author.display_name != i.author.username
                         else ""
                     )
                     metadata[str(user_id)] = [
@@ -919,6 +919,7 @@ async def get_transcript(
 
         meta_data_html: str = ""
         for md in metadata:
+            print("metadata")
             creation_time = (
                 metadata[str(md)][1]
                 .astimezone(pytz.timezone(pytz_timezone))
@@ -931,7 +932,7 @@ async def get_transcript(
                 if metadata[str(md)][5]
                 else "Unknown"
             )
-            guild_icon = guild.icon_url if guild.icon else Default.default_avatar
+            guild_icon = guild.icon.url if guild.icon else Default.default_avatar
             with open(dir_path + "/html/message/meta.html", "r") as f:
                 rawhtml = f.read()
             rawhtml = rawhtml.replace("{{USER_ID}}", str(md))
@@ -984,7 +985,7 @@ async def get_transcript(
         )
         rawhtml = rawhtml.replace(
             "{{SERVER_AVATAR_URL}}",
-            str(guild.icon_url if guild.icon_url else Default.default_avatar),
+            str(guild.icon.url if guild.icon.url else Default.default_avatar),
         )
         rawhtml = rawhtml.replace(
             "{{CHANNEL_NAME}}",
@@ -1006,7 +1007,7 @@ async def get_transcript(
         rawhtml = rawhtml.replace(
             "{{CHANNEL_CREATED_AT}}",
             str(
-                channel.id.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
+                channel.created_at.astimezone(pytz.timezone(pytz_timezone)).strftime(
                     "%d/%m/%y @ %T"
                 )
             ),
