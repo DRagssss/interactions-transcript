@@ -171,13 +171,10 @@ async def role_mention(content, c):
         match = re.search(regex, content)
         while match is not None:
             role_id = int(match[1])
-            role = None
-            try:
-                role = await Guild(**await c._client.get_guild(c.guild_id)).get_role(
-                    role_id
-                )
-            except LibraryException:
-                pass
+
+            role = await Guild(**await c._client.get_guild(c.guild_id)).get_role(
+                role_id
+            )
 
             if role is None:
                 r = "@deleted-role"
