@@ -80,7 +80,7 @@ async def get_transcript(
 
     msg.reverse()
 
-    guild = Guild(**await channel._client.get_guild(channel.guild_id))
+    guild = Guild(**await channel._client.get_guild(channel.guild.id))
 
     if mode == "plain":
         content = "==============================================================\nGuild: {}\nChannel: {}\n==============================================================\n".format(
@@ -260,6 +260,7 @@ async def get_transcript(
         data = ""
         metadata = {}
         for i in msg:
+            i: Message
             current = i
             create = i.id.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
                 time_format
@@ -295,7 +296,7 @@ async def get_transcript(
                 )
                 rawhtml = rawhtml.replace("{{MESSAGE_ID}}", str(i.id))
                 rawhtml = rawhtml.replace(
-                    "{{REF_MESSAGE_ID}}", str(i.referenced_message.message_id)
+                    "{{REF_MESSAGE_ID}}", str(i.referenced_message.id)
                 )
                 data += rawhtml
 

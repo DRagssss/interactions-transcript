@@ -144,7 +144,7 @@ async def member_mention(content, c):
             member = False
             try:
                 member_name = (
-                    Member(**await c._client.get_member(c.guild_id, member_id)).name
+                    Member(**await c._client.get_member(c.guild.id, member_id)).name
                     or User(**await c._client.get_user(member_id)).username
                 )
                 member = True
@@ -172,7 +172,7 @@ async def role_mention(content, c):
         while match is not None:
             role_id = int(match[1])
 
-            role = await Guild(**await c._client.get_guild(c.guild_id)).get_role(
+            role = await Guild(**await c._client.get_guild(c.guild.id)).get_role(
                 role_id
             )
 
