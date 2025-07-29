@@ -25,7 +25,7 @@ import pandas as pd
 import pytz
 
 from interactions import (
-    Channel,
+    GuildText,
     ComponentType,
     Extension,
     Guild,
@@ -57,7 +57,7 @@ class Transcript(Extension):
 
 
 async def get_transcript(
-    channel: Channel,
+    channel: GuildText,
     limit: int = 100,
     pytz_timezone="UTC",
     military_time: bool = False,
@@ -74,7 +74,10 @@ async def get_transcript(
     :return: A string of the transcript
     """
 
-    msg = await channel.get_history(limit=limit)
+    msg = []
+    async for message in channel.history():
+        msg.append(message)
+
     msg.reverse()
 
     guild = Guild(**await channel._client.get_guild(channel.guild_id))
@@ -89,9 +92,9 @@ async def get_transcript(
                     "%d-%b-%y %H:%M:%S"
                 )
                 edit_time = (
-                    i.edited_timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
-                        "%d-%b-%y %H:%M:%S"
-                    )
+                    i.edited_timestamp.astimezone(
+                        pytz.timezone(pytz_timezone)
+                    ).strftime("%d-%b-%y %H:%M:%S")
                     if i.edited_timestamp
                     else None
                 )
@@ -100,9 +103,9 @@ async def get_transcript(
                     "%d-%b-%y %I:%M:%S%p"
                 )
                 edit_time = (
-                    i.edited_timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
-                        "%d-%b-%y %I:%M:%S%p"
-                    )
+                    i.edited_timestamp.astimezone(
+                        pytz.timezone(pytz_timezone)
+                    ).strftime("%d-%b-%y %I:%M:%S%p")
                     if i.edited_timestamp
                     else None
                 )
@@ -129,7 +132,9 @@ async def get_transcript(
                         )
                         content += f"{newline}https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/stickers/{sticker.pack_id}/{sticker.id}.gif"
                     else:
-                        content += f"{newline}https://media.discordapp.net/stickers/{s.id}.png"
+                        content += (
+                            f"{newline}https://media.discordapp.net/stickers/{s.id}.png"
+                        )
             if i.reactions:
                 content += "\n{Reactions}"
                 for r in i.reactions:
@@ -151,9 +156,9 @@ async def get_transcript(
                     "%d-%b-%y %H:%M:%S"
                 )
                 edit_time = (
-                    i.edited_timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
-                        "%d-%b-%y %H:%M:%S"
-                    )
+                    i.edited_timestamp.astimezone(
+                        pytz.timezone(pytz_timezone)
+                    ).strftime("%d-%b-%y %H:%M:%S")
                     if i.edited_timestamp
                     else None
                 )
@@ -162,9 +167,9 @@ async def get_transcript(
                     "%d-%b-%y %I:%M:%S%p"
                 )
                 edit_time = (
-                    i.edited_timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
-                        "%d-%b-%y %I:%M:%S%p"
-                    )
+                    i.edited_timestamp.astimezone(
+                        pytz.timezone(pytz_timezone)
+                    ).strftime("%d-%b-%y %I:%M:%S%p")
                     if i.edited_timestamp
                     else None
                 )
@@ -180,43 +185,63 @@ async def get_transcript(
                     "Time": time,
                     "Edited": edit_time,
                     "Content": i.content,
-                    "Embeds": [
-                        {
-                            "title": e.title,
-                            "description": e.description,
-                            "author": {
-                                "name": e.author.name,
-                                "url": e.author.url,
-                                "icon": e.author.icon_url,
+                    "Embeds": (
+                        [
+                            {
+                                "title": e.title,
+                                "description": e.description,
+                                "author": (
+                                    {
+                                        "name": e.author.name,
+                                        "url": e.author.url,
+                                        "icon": e.author.icon_url,
+                                    }
+                                    if e.author
+                                    else {}
+                                ),
+                                "thumbnail": e.thumbnail.url if e.thumbnail else None,
+                                "image": e.image.url if e.image else None,
+                                "fields": (
+                                    [
+                                        {
+                                            "name": f.name,
+                                            "value": f.value,
+                                            "inline": f.inline,
+                                        }
+                                        for f in e.fields
+                                    ]
+                                    if e.fields
+                                    else []
+                                ),
                             }
-                            if e.author
-                            else {},
-                            "thumbnail": e.thumbnail.url if e.thumbnail else None,
-                            "image": e.image.url if e.image else None,
-                            "fields": [
-                                {"name": f.name, "value": f.value, "inline": f.inline}
-                                for f in e.fields
-                            ]
-                            if e.fields
-                            else [],
-                        }
-                        for e in i.embeds
-                    ]
-                    if i.embeds
-                    else [],
-                    "Attachments": [a.url for a in i.attachments] if i.attachments else [],
-                    "Stickers": [
-                        {"name": s.name, "id": str(s.id), "format": s.format_type}
-                        for s in i.sticker_items
-                    ]
-                    if i.sticker_items
-                    else [],
-                    "Reactions": [
-                        {"name": r.emoji.name, "id": str(r.emoji.id), "count": r.count}
-                        for r in i.reactions
-                    ]
-                    if i.reactions
-                    else [],
+                            for e in i.embeds
+                        ]
+                        if i.embeds
+                        else []
+                    ),
+                    "Attachments": (
+                        [a.url for a in i.attachments] if i.attachments else []
+                    ),
+                    "Stickers": (
+                        [
+                            {"name": s.name, "id": str(s.id), "format": s.format_type}
+                            for s in i.sticker_items
+                        ]
+                        if i.sticker_items
+                        else []
+                    ),
+                    "Reactions": (
+                        [
+                            {
+                                "name": r.emoji.name,
+                                "id": str(r.emoji.id),
+                                "count": r.count,
+                            }
+                            for r in i.reactions
+                        ]
+                        if i.reactions
+                        else []
+                    ),
                 }
             )
         df = pd.DataFrame(data)
@@ -228,15 +253,21 @@ async def get_transcript(
             return file.getvalue()
 
     elif mode == "html":
-        time_format = "%A, %e %B %Y at %H:%M" if military_time else "%A, %e %B %Y at %I:%M %p"
+        time_format = (
+            "%A, %e %B %Y at %H:%M" if military_time else "%A, %e %B %Y at %I:%M %p"
+        )
         previous = None
         data = ""
         metadata = {}
         for i in msg:
             current = i
-            create = i.id.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(time_format)
+            create = i.id.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
+                time_format
+            )
             edit = (
-                i.edited_timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(time_format)
+                i.edited_timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
+                    time_format
+                )
                 if i.edited_timestamp
                 else None
             )
@@ -255,7 +286,9 @@ async def get_transcript(
                 )
                 rawhtml = rawhtml.replace(
                     "{{NAME}}",
-                    await parse_md(str(html.escape(i.author.username)), channel, tz=pytz_timezone),
+                    await parse_md(
+                        str(html.escape(i.author.username)), channel, tz=pytz_timezone
+                    ),
                 )
                 rawhtml = rawhtml.replace(
                     "{{NAME_TAG}}", f"{i.author.username}#{i.author.discriminator}"
@@ -282,7 +315,9 @@ async def get_transcript(
                 )
                 rawhtml = rawhtml.replace(
                     "{{NAME}}",
-                    await parse_md(str(html.escape(i.author.username)), channel, tz=pytz_timezone),
+                    await parse_md(
+                        str(html.escape(i.author.username)), channel, tz=pytz_timezone
+                    ),
                 )
                 rawhtml = rawhtml.replace(
                     "{{NAME_TAG}}", f"{i.author.username}#{i.author.discriminator}"
@@ -297,13 +332,17 @@ async def get_transcript(
                         rawhtml = f.read()
                     rawhtml = rawhtml.replace(
                         "{{MESSAGE_CONTENT}}",
-                        await parse_md(str(html.escape(i.content)), channel, tz=pytz_timezone),
+                        await parse_md(
+                            str(html.escape(i.content)), channel, tz=pytz_timezone
+                        ),
                     )
                     rawhtml = rawhtml.replace(
                         "{{EDIT}}",
-                        f'<span class="chatlog__reference-edited-timestamp" title="{i.edited_timestamp}">(edited)</span>'
-                        if edit
-                        else "",
+                        (
+                            f'<span class="chatlog__reference-edited-timestamp" title="{i.edited_timestamp}">(edited)</span>'
+                            if edit
+                            else ""
+                        ),
                     )
                     msg_content = rawhtml
                 if not i.referenced_message:
@@ -315,7 +354,9 @@ async def get_transcript(
                             int(i.referenced_message._json["id"]),
                         )
                     ):
-                        with open(dir_path + "/html/message/reference_unknown.html", "r") as f:
+                        with open(
+                            dir_path + "/html/message/reference_unknown.html", "r"
+                        ) as f:
                             rawhtml = f.read()
                         referenced_message = rawhtml
                     else:
@@ -324,15 +365,23 @@ async def get_transcript(
                             ref.content = "Click to see attachment"
                         with open(dir_path + "/html/message/reference.html", "r") as f:
                             rawhtml = f.read()
-                        rawhtml = rawhtml.replace("{{AVATAR_URL}}", ref.author.avatar_url)
+                        rawhtml = rawhtml.replace(
+                            "{{AVATAR_URL}}", ref.author.avatar_url
+                        )
                         rawhtml = rawhtml.replace(
                             "{{BOT_TAG}}",
-                            '<span class="chatlog__bot-tag">BOT</span>' if ref.author.bot else "",
+                            (
+                                '<span class="chatlog__bot-tag">BOT</span>'
+                                if ref.author.bot
+                                else ""
+                            ),
                         )
                         rawhtml = rawhtml.replace(
                             "{{NAME}}",
                             await parse_md(
-                                str(html.escape(ref.author.username)), channel, tz=pytz_timezone
+                                str(html.escape(ref.author.username)),
+                                channel,
+                                tz=pytz_timezone,
                             ),
                         )
                         rawhtml = rawhtml.replace(
@@ -353,15 +402,19 @@ async def get_transcript(
                         )
                         rawhtml = rawhtml.replace(
                             "{{EDIT}}",
-                            f'<span class="chatlog__reference-edited-timestamp" title="{i.edited_timestamp}">(edited)</span>'
-                            if edit
-                            else "",
+                            (
+                                f'<span class="chatlog__reference-edited-timestamp" title="{i.edited_timestamp}">(edited)</span>'
+                                if edit
+                                else ""
+                            ),
                         )
                         rawhtml = rawhtml.replace(
                             "{{ATTACHMENT_ICON}}",
-                            Default.reference_attachment_icon
-                            if ref.embeds or ref.attachments
-                            else "",
+                            (
+                                Default.reference_attachment_icon
+                                if ref.embeds or ref.attachments
+                                else ""
+                            ),
                         )
                         rawhtml = rawhtml.replace("{{MESSAGE_ID}}", str(ref.id))
                         referenced_message = rawhtml
@@ -402,11 +455,15 @@ async def get_transcript(
 
                         description = ""
                         if e.description:
-                            with open(dir_path + "/html/embed/description.html", "r") as f:
+                            with open(
+                                dir_path + "/html/embed/description.html", "r"
+                            ) as f:
                                 rawhtml = f.read()
                             rawhtml = rawhtml.replace(
                                 "{{EMBED_DESC}}",
-                                await parse_embed(e.description, channel, tz=pytz_timezone),
+                                await parse_embed(
+                                    e.description, channel, tz=pytz_timezone
+                                ),
                             )
                             description = rawhtml
 
@@ -414,18 +471,26 @@ async def get_transcript(
                         if e.fields:
                             for field in e.fields:
                                 if field.inline:
-                                    with open(dir_path + "/html/embed/field-inline.html", "r") as f:
+                                    with open(
+                                        dir_path + "/html/embed/field-inline.html", "r"
+                                    ) as f:
                                         rawhtml = f.read()
                                 else:
-                                    with open(dir_path + "/html/embed/field.html", "r") as f:
+                                    with open(
+                                        dir_path + "/html/embed/field.html", "r"
+                                    ) as f:
                                         rawhtml = f.read()
                                 rawhtml = rawhtml.replace(
                                     "{{FIELD_NAME}}",
-                                    await parse_md(field.name, channel, tz=pytz_timezone),
+                                    await parse_md(
+                                        field.name, channel, tz=pytz_timezone
+                                    ),
                                 )
                                 rawhtml = rawhtml.replace(
                                     "{{FIELD_VALUE}}",
-                                    await parse_embed(field.value, channel, tz=pytz_timezone),
+                                    await parse_embed(
+                                        field.value, channel, tz=pytz_timezone
+                                    ),
                                 )
                                 fields += rawhtml
 
@@ -439,14 +504,20 @@ async def get_transcript(
                             )
                             author_icon = ""
                             if e.author.icon_url:
-                                with open(dir_path + "/html/embed/author_icon.html", "r") as f:
+                                with open(
+                                    dir_path + "/html/embed/author_icon.html", "r"
+                                ) as f:
                                     rawhtml = f.read()
                                 rawhtml = rawhtml.replace("{{AUTHOR}}", author)
-                                rawhtml = rawhtml.replace("{{AUTHOR_ICON}}", e.author.icon_url)
+                                rawhtml = rawhtml.replace(
+                                    "{{AUTHOR_ICON}}", e.author.icon_url
+                                )
                                 author_icon = rawhtml
 
                             if author_icon == "" and author != "":
-                                with open(dir_path + "/html/embed/author.html", "r") as f:
+                                with open(
+                                    dir_path + "/html/embed/author.html", "r"
+                                ) as f:
                                     rawhtml = f.read()
                                 rawhtml = rawhtml.replace("{{AUTHOR}}", author)
                                 author = rawhtml
@@ -457,14 +528,20 @@ async def get_transcript(
                         if e.image:
                             with open(dir_path + "/html/embed/image.html", "r") as f:
                                 rawhtml = f.read()
-                            rawhtml = rawhtml.replace("{{EMBED_IMAGE}}", e.image.proxy_url)
+                            rawhtml = rawhtml.replace(
+                                "{{EMBED_IMAGE}}", e.image.proxy_url
+                            )
                             image = rawhtml
 
                         thumbnail = ""
                         if e.thumbnail:
-                            with open(dir_path + "/html/embed/thumbnail.html", "r") as f:
+                            with open(
+                                dir_path + "/html/embed/thumbnail.html", "r"
+                            ) as f:
                                 rawhtml = f.read()
-                            rawhtml = rawhtml.replace("{{EMBED_THUMBNAIL}}", e.thumbnail.url)
+                            rawhtml = rawhtml.replace(
+                                "{{EMBED_THUMBNAIL}}", e.thumbnail.url
+                            )
                             thumbnail = rawhtml
 
                         footer = ""
@@ -473,12 +550,16 @@ async def get_transcript(
                             icon = e.footer.icon_url if e.footer.icon_url else None
 
                             if icon is not None:
-                                with open(dir_path + "/html/embed/footer_image.html", "r") as f:
+                                with open(
+                                    dir_path + "/html/embed/footer_image.html", "r"
+                                ) as f:
                                     rawhtml = f.read()
                                 rawhtml = rawhtml.replace("{{EMBED_FOOTER}}", footer)
                                 rawhtml = rawhtml.replace("{{EMBED_FOOTER_ICON}}", icon)
                             else:
-                                with open(dir_path + "/html/embed/footer.html", "r") as f:
+                                with open(
+                                    dir_path + "/html/embed/footer.html", "r"
+                                ) as f:
                                     rawhtml = f.read()
                                 rawhtml = rawhtml.replace("{{EMBED_FOOTER}}", footer)
                             footer = rawhtml
@@ -505,27 +586,45 @@ async def get_transcript(
                             and "video" not in a.content_type
                             and "audio" not in a.content_type
                         ):
-                            with open(dir_path + "/html/attachment/message.html", "r") as f:
+                            with open(
+                                dir_path + "/html/attachment/message.html", "r"
+                            ) as f:
                                 rawhtml = f.read()
-                            rawhtml = rawhtml.replace("{{ATTACH_ICON}}", get_file_icon(a.url))
+                            rawhtml = rawhtml.replace(
+                                "{{ATTACH_ICON}}", get_file_icon(a.url)
+                            )
                             rawhtml = rawhtml.replace("{{ATTACH_URL}}", str(a.url))
                             rawhtml = rawhtml.replace(
                                 "{{ATTACH_BYTES}}", str(get_file_size(a.size))
                             )
-                            rawhtml = rawhtml.replace("{{ATTACH_FILE}}", str(a.filename))
+                            rawhtml = rawhtml.replace(
+                                "{{ATTACH_FILE}}", str(a.filename)
+                            )
 
                         else:
                             if "image" in a.content_type:
-                                with open(dir_path + "/html/attachment/image.html", "r") as f:
+                                with open(
+                                    dir_path + "/html/attachment/image.html", "r"
+                                ) as f:
                                     rawhtml = f.read()
-                                rawhtml = rawhtml.replace("{{ATTACH_URL}}", str(a.proxy_url))
-                                rawhtml = rawhtml.replace("{{ATTACH_URL_THUMB}}", str(a.proxy_url))
+                                rawhtml = rawhtml.replace(
+                                    "{{ATTACH_URL}}", str(a.proxy_url)
+                                )
+                                rawhtml = rawhtml.replace(
+                                    "{{ATTACH_URL_THUMB}}", str(a.proxy_url)
+                                )
                             elif "video" in a.content_type:
-                                with open(dir_path + "/html/attachment/video.html", "r") as f:
+                                with open(
+                                    dir_path + "/html/attachment/video.html", "r"
+                                ) as f:
                                     rawhtml = f.read()
-                                rawhtml = rawhtml.replace("{{ATTACH_URL}}", str(a.proxy_url))
+                                rawhtml = rawhtml.replace(
+                                    "{{ATTACH_URL}}", str(a.proxy_url)
+                                )
                             elif "audio" in a.content_type:
-                                with open(dir_path + "/html/attachment/audio.html", "r") as f:
+                                with open(
+                                    dir_path + "/html/attachment/audio.html", "r"
+                                ) as f:
                                     rawhtml = f.read()
                                 rawhtml = rawhtml.replace(
                                     "{{ATTACH_ICON}}", Default.file_attachment_audio
@@ -534,8 +633,12 @@ async def get_transcript(
                                 rawhtml = rawhtml.replace(
                                     "{{ATTACH_BYTES}}", str(get_file_size(a.size))
                                 )
-                                rawhtml = rawhtml.replace("{{ATTACH_AUDIO}}", str(a.proxy_url))
-                                rawhtml = rawhtml.replace("{{ATTACH_FILE}}", str(a.filename))
+                                rawhtml = rawhtml.replace(
+                                    "{{ATTACH_AUDIO}}", str(a.proxy_url)
+                                )
+                                rawhtml = rawhtml.replace(
+                                    "{{ATTACH_FILE}}", str(a.filename)
+                                )
                         attachments += rawhtml
 
                 components = ""
@@ -553,25 +656,31 @@ async def get_transcript(
                                     "{{DISABLED}}",
                                     "chatlog__component-disabled" if c.disabled else "",
                                 )
-                                rawhtml = rawhtml.replace("{{URL}}", c.url if c.url else "")
+                                rawhtml = rawhtml.replace(
+                                    "{{URL}}", c.url if c.url else ""
+                                )
                                 rawhtml = rawhtml.replace(
                                     "{{LABEL}}",
                                     await parse_md(
-                                        c.label if c.label else "", channel, tz=pytz_timezone
+                                        c.label if c.label else "",
+                                        channel,
+                                        tz=pytz_timezone,
                                     ),
                                 )
                                 rawhtml = rawhtml.replace(
                                     "{{EMOJI}}",
-                                    await parse_emoji(
-                                        str(c.emoji) if c.emoji else ""
-                                    ),
+                                    await parse_emoji(str(c.emoji) if c.emoji else ""),
                                 )
                                 rawhtml = rawhtml.replace(
                                     "{{ICON}}",
                                     Default.button_external_link if c.url else "",
                                 )
-                                rawhtml = rawhtml.replace("{{STYLE}}", styles[c.style.name.lower()])
-                                components += f'<div class="chatlog__components">{rawhtml}</div>'
+                                rawhtml = rawhtml.replace(
+                                    "{{STYLE}}", styles[c.style.name.lower()]
+                                )
+                                components += (
+                                    f'<div class="chatlog__components">{rawhtml}</div>'
+                                )
 
                             elif c.type == ComponentType.SELECT:
                                 option_content = ""
@@ -587,22 +696,24 @@ async def get_transcript(
                                                 rawhtml = f.read()
                                             rawhtml = rawhtml.replace(
                                                 "{{EMOJI}}",
-                                                await parse_emoji(
-                                                    str(option.emoji)
-                                                ),
+                                                await parse_emoji(str(option.emoji)),
                                             )
                                             rawhtml = rawhtml.replace(
                                                 "{{TITLE}}",
                                                 await parse_md(
-                                                    str(option.label), channel, tz=pytz_timezone
+                                                    str(option.label),
+                                                    channel,
+                                                    tz=pytz_timezone,
                                                 ),
                                             )
                                             rawhtml = rawhtml.replace(
                                                 "{{DESCRIPTION}}",
                                                 await parse_md(
-                                                    str(option.description)
-                                                    if option.description
-                                                    else "",
+                                                    (
+                                                        str(option.description)
+                                                        if option.description
+                                                        else ""
+                                                    ),
                                                     channel,
                                                     tz=pytz_timezone,
                                                 ),
@@ -617,15 +728,19 @@ async def get_transcript(
                                             rawhtml = rawhtml.replace(
                                                 "{{TITLE}}",
                                                 await parse_md(
-                                                    str(option.label), channel, tz=pytz_timezone
+                                                    str(option.label),
+                                                    channel,
+                                                    tz=pytz_timezone,
                                                 ),
                                             )
                                             rawhtml = rawhtml.replace(
                                                 "{{DESCRIPTION}}",
                                                 await parse_md(
-                                                    str(option.description)
-                                                    if option.description
-                                                    else "",
+                                                    (
+                                                        str(option.description)
+                                                        if option.description
+                                                        else ""
+                                                    ),
                                                     channel,
                                                     tz=pytz_timezone,
                                                 ),
@@ -652,11 +767,15 @@ async def get_transcript(
                                     ),
                                 )
                                 rawhtml = rawhtml.replace("{{ID}}", str(menu_div_id))
-                                rawhtml = rawhtml.replace("{{CONTENT}}", str(option_content))
+                                rawhtml = rawhtml.replace(
+                                    "{{CONTENT}}", str(option_content)
+                                )
                                 rawhtml = rawhtml.replace(
                                     "{{ICON}}", Default.interaction_dropdown_icon
                                 )
-                                components += f'<div class="chatlog__components">{rawhtml}</div>'
+                                components += (
+                                    f'<div class="chatlog__components">{rawhtml}</div>'
+                                )
                                 menu_div_id += 1
 
                 reactions = ""
@@ -670,7 +789,9 @@ async def get_transcript(
                             )
                             rawhtml = rawhtml.replace("{{EMOJI_COUNT}}", str(r.count))
                         else:
-                            with open(dir_path + "/html/reaction/custom_emoji.html", "r") as f:
+                            with open(
+                                dir_path + "/html/reaction/custom_emoji.html", "r"
+                            ) as f:
                                 rawhtml = f.read()
                             rawhtml = rawhtml.replace("{{EMOJI}}", str(r.emoji.id))
                             rawhtml = rawhtml.replace("{{EMOJI_COUNT}}", str(r.count))
@@ -688,25 +809,32 @@ async def get_transcript(
                     or (previous and previous.author.id != i.author.id)
                     or i.webhook_id is not None
                     or (
-                        previous and i.id.timestamp > (previous.id.timestamp + timedelta(minutes=4))
+                        previous
+                        and i.id.timestamp
+                        > (previous.id.timestamp + timedelta(minutes=4))
                     )
                 ):
                     if previous is not None:
                         data += "</div>"
                     reference_symbol = ""
                     if referenced_message != "":
-                        reference_symbol = "<div class='chatlog__reference-symbol'></div>"
+                        reference_symbol = (
+                            "<div class='chatlog__reference-symbol'></div>"
+                        )
 
                     with open(dir_path + "/html/message/start.html", "r") as f:
                         rawhtml = f.read()
                     rawhtml = rawhtml.replace("{{REFERENCE_SYMBOL}}", reference_symbol)
                     rawhtml = rawhtml.replace("{{REFERENCE}}", referenced_message)
-                    rawhtml = rawhtml.replace("{{AVATAR_URL}}", str(i.author.avatar_url))
+                    rawhtml = rawhtml.replace(
+                        "{{AVATAR_URL}}", str(i.author.avatar_url)
+                    )
                     rawhtml = rawhtml.replace(
                         "{{NAME_TAG}}", f"{i.author.username}#{i.author.discriminator}"
                     )
                     rawhtml = rawhtml.replace(
-                        "{{USER_ID}}", await parse_md(str(i.author.id), channel, tz=pytz_timezone)
+                        "{{USER_ID}}",
+                        await parse_md(str(i.author.id), channel, tz=pytz_timezone),
                     )
                     rawhtml = rawhtml.replace(
                         "{{USER_COLOUR}}",
@@ -720,17 +848,24 @@ async def get_transcript(
                     rawhtml = rawhtml.replace(
                         "{{NAME}}",
                         await parse_md(
-                            str(html.escape(i.author.username)), channel, tz=pytz_timezone
+                            str(html.escape(i.author.username)),
+                            channel,
+                            tz=pytz_timezone,
                         ),
                     )
                     rawhtml = rawhtml.replace(
                         "{{BOT_TAG}}",
-                        '<span class="chatlog__bot-tag">BOT</span>' if i.author.bot else "",
+                        (
+                            '<span class="chatlog__bot-tag">BOT</span>'
+                            if i.author.bot
+                            else ""
+                        ),
                     )
                     rawhtml = rawhtml.replace("{{TIMESTAMP}}", str(create))
                     rawhtml = rawhtml.replace("{{DEFAULT_TIMESTAMP}}", str(create))
                     rawhtml = rawhtml.replace(
-                        "{{MESSAGE_ID}}", await parse_md(str(i.id), channel, tz=pytz_timezone)
+                        "{{MESSAGE_ID}}",
+                        await parse_md(str(i.id), channel, tz=pytz_timezone),
                     )
                     rawhtml = rawhtml.replace("{{MESSAGE_CONTENT}}", msg_content)
                     rawhtml = rawhtml.replace("{{EMBEDS}}", embeds)
@@ -742,7 +877,8 @@ async def get_transcript(
                     with open(dir_path + "/html/message/message.html", "r") as f:
                         rawhtml = f.read()
                     rawhtml = rawhtml.replace(
-                        "{{MESSAGE_ID}}", await parse_md(str(i.id), channel, tz=pytz_timezone)
+                        "{{MESSAGE_ID}}",
+                        await parse_md(str(i.id), channel, tz=pytz_timezone),
                     )
                     rawhtml = rawhtml.replace("{{MESSAGE_CONTENT}}", msg_content)
                     rawhtml = rawhtml.replace("{{EMBEDS}}", embeds)
@@ -759,7 +895,9 @@ async def get_transcript(
                     created_at = i.author.id.timestamp
                     bot = i.author.bot
                     avatar = i.author.avatar_url
-                    joined_at = i.member.joined_at if i.member and i.member.joined_at else None
+                    joined_at = (
+                        i.member.joined_at if i.member and i.member.joined_at else None
+                    )
                     display_name = (
                         f'<div class="meta__display-name">{i.member.name}</div>'
                         if i.member and i.member.name != i.author.username
@@ -786,7 +924,9 @@ async def get_transcript(
                 .strftime("%d/%m/%y @ %T")
             )
             joined_time = (
-                metadata[str(md)][5].astimezone(pytz.timezone(pytz_timezone)).strftime("%b %d, %Y")
+                metadata[str(md)][5]
+                .astimezone(pytz.timezone(pytz_timezone))
+                .strftime("%b %d, %Y")
                 if metadata[str(md)][5]
                 else "Unknown"
             )
@@ -795,7 +935,9 @@ async def get_transcript(
                 rawhtml = f.read()
             rawhtml = rawhtml.replace("{{USER_ID}}", str(md))
             rawhtml = rawhtml.replace("{{USERNAME}}", str(metadata[str(md)][0][:-5]))
-            rawhtml = rawhtml.replace("{{DISCRIMINATOR}}", str(metadata[str(md)][0][-5:]))
+            rawhtml = rawhtml.replace(
+                "{{DISCRIMINATOR}}", str(metadata[str(md)][0][-5:])
+            )
             rawhtml = rawhtml.replace("{{BOT}}", str(metadata[str(md)][2]))
             rawhtml = rawhtml.replace("{{CREATED_AT}}", str(creation_time))
             rawhtml = rawhtml.replace("{{JOINED_AT}}", str(joined_time))
@@ -812,13 +954,17 @@ async def get_transcript(
             _limit = f"latest {limit} messages"
 
         channel_topic = (
-            f'<span class="panel__channel-topic">{channel.topic}</span>' if channel.topic else ""
+            f'<span class="panel__channel-topic">{channel.topic}</span>'
+            if channel.topic
+            else ""
         )
 
         rawhtml = '<span class="info__subject">This is the {{LIMIT}} of the #{{CHANNEL_NAME}} channel. {{RAW_CHANNEL_TOPIC}}</span>'
         rawhtml = rawhtml.replace("{{LIMIT}}", _limit)
         rawhtml = rawhtml.replace("{{CHANNEL_NAME}}", channel.name)
-        rawhtml = rawhtml.replace("{{RAW_CHANNEL_TOPIC}}", channel.topic if channel.topic else "")
+        rawhtml = rawhtml.replace(
+            "{{RAW_CHANNEL_TOPIC}}", channel.topic if channel.topic else ""
+        )
         _subject = rawhtml
 
         _fancy_time = ""
@@ -840,7 +986,8 @@ async def get_transcript(
             str(guild.icon_url if guild.icon_url else Default.default_avatar),
         )
         rawhtml = rawhtml.replace(
-            "{{CHANNEL_NAME}}", await parse_md(f"{channel.name}", channel, tz=pytz_timezone)
+            "{{CHANNEL_NAME}}",
+            await parse_md(f"{channel.name}", channel, tz=pytz_timezone),
         )
         rawhtml = rawhtml.replace("{{MESSAGE_COUNT}}", str(len(msg)))
         rawhtml = rawhtml.replace("{{MESSAGES}}", data)
@@ -848,7 +995,11 @@ async def get_transcript(
         rawhtml = rawhtml.replace("{{TIMEZONE}}", str(pytz_timezone))
         rawhtml = rawhtml.replace(
             "{{DATE_TIME}}",
-            str(datetime.now(pytz.timezone(pytz_timezone)).strftime("%e %B %Y at %T (%Z)")),
+            str(
+                datetime.now(pytz.timezone(pytz_timezone)).strftime(
+                    "%e %B %Y at %T (%Z)"
+                )
+            ),
         )
         rawhtml = rawhtml.replace("{{SUBJECT}}", _subject)
         rawhtml = rawhtml.replace(
@@ -873,5 +1024,5 @@ async def get_transcript(
 
 
 def setup(client):
-    Channel.get_transcript = get_transcript
+    GuildText.get_transcript = get_transcript
     return Transcript(client)

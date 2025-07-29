@@ -5,7 +5,7 @@ import re
 
 import pytz
 
-from interactions import Channel, Guild, LibraryException, Member, User
+from interactions import GuildText, Guild, LibraryException, Member, User
 
 from .emoji_convert import convert_emoji
 
@@ -19,7 +19,9 @@ styles = {
 
 
 class Default:
-    logo: str = "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-logo.svg"
+    logo: str = (
+        "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-logo.svg"
+    )
     default_avatar: str = (
         "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-default.png"
     )
@@ -50,9 +52,15 @@ class Default:
     file_attachment_unknown: str = (
         "https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-unknown.svg"
     )
-    button_external_link: str = '<img class="chatlog__reference-icon" src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-external-link.svg">'
-    reference_attachment_icon: str = '<img class="chatlog__reference-icon" src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-attachment.svg">'
-    interaction_dropdown_icon: str = '<img class="chatlog__dropdown-icon" src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-dropdown.svg">'
+    button_external_link: str = (
+        '<img class="chatlog__reference-icon" src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-external-link.svg">'
+    )
+    reference_attachment_icon: str = (
+        '<img class="chatlog__reference-icon" src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-attachment.svg">'
+    )
+    interaction_dropdown_icon: str = (
+        '<img class="chatlog__dropdown-icon" src="https://cdn.jsdelivr.net/gh/mahtoid/DiscordUtils@master/discord-dropdown.svg">'
+    )
 
 
 class Regex:
@@ -81,7 +89,10 @@ class Regex:
 
 
 async def escape_mention(content):
-    for match in re.finditer(f"({Regex.REGEX_ROLES}|{Regex.REGEX_MEMBERS}|{Regex.REGEX_CHANNELS}|{Regex.REGEX_EMOJIS}|{Regex.REGEX_ROLES_2}|{Regex.REGEX_MEMBERS_2}|{Regex.REGEX_CHANNELS_2}|{Regex.REGEX_EMOJIS_2})", content):
+    for match in re.finditer(
+        f"({Regex.REGEX_ROLES}|{Regex.REGEX_MEMBERS}|{Regex.REGEX_CHANNELS}|{Regex.REGEX_EMOJIS}|{Regex.REGEX_ROLES_2}|{Regex.REGEX_MEMBERS_2}|{Regex.REGEX_CHANNELS_2}|{Regex.REGEX_EMOJIS_2})",
+        content,
+    ):
         pre_content = content[: match.start()]
         post_content = content[match.end() :]
         match_content = content[match.start() : match.end()]
@@ -109,13 +120,16 @@ async def channel_mention(content, c):
         match = re.search(regex, content)
         while match is not None:
             channel_id = int(match[1])
-            channel = Channel(**await c._client.get_channel(channel_id))
+            channel = GuildText(**await c._client.get_channel(channel_id))
 
             content = content.replace(
                 content[match.start() : match.end()],
-                "#deleted-channel"
-                if channel is None
-                else '<span class="mention" title="%s">#%s</span>' % (channel.id, channel.name),
+                (
+                    "#deleted-channel"
+                    if channel is None
+                    else '<span class="mention" title="%s">#%s</span>'
+                    % (channel.id, channel.name)
+                ),
             )
 
             match = re.search(regex, content)
@@ -139,10 +153,13 @@ async def member_mention(content, c):
 
             content = content.replace(
                 content[match.start() : match.end()],
-                '<span class="mention" title="%s">@%s</span>' % (str(member_id), str(member_name))
-                if member
-                else '<span class="mention" title="%s">&lt;@%s></span>'
-                % (str(member_id), str(member_id)),
+                (
+                    '<span class="mention" title="%s">@%s</span>'
+                    % (str(member_id), str(member_name))
+                    if member
+                    else '<span class="mention" title="%s">&lt;@%s></span>'
+                    % (str(member_id), str(member_id))
+                ),
             )
 
             match = re.search(regex, content)
@@ -156,7 +173,9 @@ async def role_mention(content, c):
             role_id = int(match[1])
             role = None
             try:
-                role = await Guild(**await c._client.get_guild(c.guild_id)).get_role(role_id)
+                role = await Guild(**await c._client.get_guild(c.guild_id)).get_role(
+                    role_id
+                )
             except LibraryException:
                 pass
 
@@ -228,7 +247,10 @@ def return_to_markdown(content):
             r'class="spoiler-text">(.*?)<\/span><\/span>',
             "||%s||",
         ],
-        [r'<span class="unix-timestamp" data-timestamp=".*?" raw-content="(.*?)">.*?</span>', "%s"],
+        [
+            r'<span class="unix-timestamp" data-timestamp=".*?" raw-content="(.*?)">.*?</span>',
+            "%s",
+        ],
     )
 
     for x in holders:
@@ -333,7 +355,9 @@ def normal_markdown(content):
         match = re.search(pattern, content)
         while match is not None:
             affected_text = match[1]
-            content = content.replace(content[match.start() : match.end()], r % affected_text)
+            content = content.replace(
+                content[match.start() : match.end()], r % affected_text
+            )
             match = re.search(pattern, content)
 
     # > quote
@@ -528,7 +552,9 @@ async def parse_emoji(content):
         match = re.search(p, content)
         while match is not None:
             emoji_id = match[1]
-            content = content.replace(content[match.start() : match.end()], r % emoji_id)
+            content = content.replace(
+                content[match.start() : match.end()], r % emoji_id
+            )
             match = re.search(p, content)
     return content
 
@@ -539,14 +565,18 @@ def parse_br(content):
 
 async def parse_md(content, channel, tz):
     return await parse_emoji(
-        code_block_markdown(normal_markdown(links(await parse_mention(content, channel, tz)))),
+        code_block_markdown(
+            normal_markdown(links(await parse_mention(content, channel, tz)))
+        ),
     )
 
 
 async def parse_embed(content, channel, tz):
     return await parse_emoji(
         code_block_markdown(
-            normal_markdown(embed_markdown(links(await parse_mention(content, channel, tz))))
+            normal_markdown(
+                embed_markdown(links(await parse_mention(content, channel, tz)))
+            )
         ),
     )
 
@@ -554,7 +584,9 @@ async def parse_embed(content, channel, tz):
 async def parse_msg_ref(content, channel, tz):
     return parse_br(
         await parse_emoji(
-            code_block_markdown(normal_markdown(links(await parse_mention(content, channel, tz)))),
+            code_block_markdown(
+                normal_markdown(links(await parse_mention(content, channel, tz)))
+            ),
         )
     )
 
