@@ -923,7 +923,6 @@ async def get_transcript(
 
         meta_data_html: str = ""
         for md in metadata:
-            print("metadata")
             creation_time = (
                 metadata[str(md)][1]
                 .astimezone(pytz.timezone(pytz_timezone))
