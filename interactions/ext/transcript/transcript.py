@@ -897,7 +897,11 @@ async def get_transcript(
                     bot = i.author.bot
                     avatar = i.author.avatar_url
                     joined_at = (
-                        i.author.joined_at if i.author and i.author.joined_at else None
+                        i.author.joined_at
+                        if i.author
+                        and hasattr(i.author, "joined_at")
+                        and i.author.joined_at
+                        else None
                     )
                     display_name = (
                         f'<div class="meta__display-name">{i.author.display_name}</div>'
