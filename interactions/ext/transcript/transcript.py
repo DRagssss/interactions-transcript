@@ -88,7 +88,7 @@ async def get_transcript(
         )
         for i in msg:
             if military_time:
-                time = i.id.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
+                time = i.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
                     "%d-%b-%y %H:%M:%S"
                 )
                 edit_time = (
@@ -99,7 +99,7 @@ async def get_transcript(
                     else None
                 )
             else:
-                time = i.id.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
+                time = i.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
                     "%d-%b-%y %I:%M:%S%p"
                 )
                 edit_time = (
@@ -152,7 +152,7 @@ async def get_transcript(
         data = []
         for i in msg:
             if military_time:
-                time = i.id.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
+                time = i.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
                     "%d-%b-%y %H:%M:%S"
                 )
                 edit_time = (
@@ -163,7 +163,7 @@ async def get_transcript(
                     else None
                 )
             else:
-                time = i.id.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
+                time = i.timestamp.astimezone(pytz.timezone(pytz_timezone)).strftime(
                     "%d-%b-%y %I:%M:%S%p"
                 )
                 edit_time = (
@@ -350,9 +350,8 @@ async def get_transcript(
                     referenced_message = ""
                 else:
                     if not (
-                        ref := channel._client.get_message(
-                            channel.id,
-                            int(i.get_referenced_message()._json["id"]),
+                        ref := channel.get_message(
+                            i.get_referenced_message().id,
                         )
                     ):
                         with open(
@@ -361,7 +360,7 @@ async def get_transcript(
                             rawhtml = f.read()
                         referenced_message = rawhtml
                     else:
-                        ref = Message(**ref)
+                        # ref = Message(**ref)
                         if not ref.content:
                             ref.content = "Click to see attachment"
                         with open(dir_path + "/html/message/reference.html", "r") as f:
@@ -811,8 +810,7 @@ async def get_transcript(
                     or i.webhook_id is not None
                     or (
                         previous
-                        and i.id.timestamp
-                        > (previous.id.timestamp + timedelta(minutes=4))
+                        and i.timestamp > (previous.timestamp + timedelta(minutes=4))
                     )
                 ):
                     if previous is not None:
