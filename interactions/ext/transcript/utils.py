@@ -177,7 +177,7 @@ async def role_mention(content, c: GuildText):
             if role is None:
                 r = "@deleted-role"
             else:
-                color = "#dee0fc" if role.color == 0 else f"#{hex(role.color)[2:]}"
+                color = "#dee0fc" if role.color.value == 0 else f"#{hex(role.color.value)[2:]}"
                 r = '<span style="color: %s;">@%s</span>' % (color, role.name)
             content = content.replace(content[match.start() : match.end()], r)
 
