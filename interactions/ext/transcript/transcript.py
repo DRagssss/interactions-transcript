@@ -721,7 +721,7 @@ async def get_transcript(
                                         else:
                                             with open(
                                                 dir_path
-                                                + "/html/component/component_menu_option_emoji.html",
+                                                + "/html/component/component_menu_options_emoji.html",
                                                 "r",
                                             ) as f:
                                                 rawhtml = f.read()
