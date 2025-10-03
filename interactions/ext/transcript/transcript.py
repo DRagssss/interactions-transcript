@@ -747,7 +747,7 @@ async def get_transcript(
                                             )
                                         option_content.append(rawhtml)
                                     if option_content:
-                                        option_content = f'<div id="dropdownMenu{menu_div_id}" class="dropdownContent">{"".join(content)}</div>'
+                                        option_content = f'<div id="dropdownMenu{menu_div_id}" class="dropdownContent">{"".join(option_content)}</div>'
 
                                 with open(
                                     dir_path + "/html/component/component_menu.html",
