@@ -1,6 +1,7 @@
 """
 An extension library for interactions.py to create transcripts.
 Copyright (C) 2022 ItsRqtl
+Modifications Copyright (C) 2025 DRags
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -28,7 +29,6 @@ from interactions import (
     GuildText,
     ComponentType,
     Extension,
-    Guild,
     Message,
     MessageType,
     Sticker,
@@ -682,7 +682,7 @@ async def get_transcript(
                                     f'<div class="chatlog__components">{rawhtml}</div>'
                                 )
 
-                            elif c.type == ComponentType.SELECT:
+                            elif c.type == ComponentType.STRING_SELECT:
                                 option_content = ""
                                 if not c.disabled:
                                     option_content = []

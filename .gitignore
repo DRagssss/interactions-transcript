@@ -238,3 +238,4 @@ interactions/ext/base.py
 interactions/ext/converter.py
 interactions/ext/version.py
 interactions/ext/error.py
+/.vscode
